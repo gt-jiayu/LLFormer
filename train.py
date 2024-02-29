@@ -52,7 +52,7 @@ model_restored.cuda()
 ## Training model path direction
 mode = opt['MODEL']['MODE']
 
-model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models')
+model_dir = os.path.join(Train['SAVE_DIR'], mode, 'checkpoints/LOL/models')
 utils.mkdir(model_dir)
 train_dir = Train['TRAIN_DIR']
 val_dir = Train['VAL_DIR']
@@ -143,11 +143,14 @@ for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
         for param in model_restored.parameters():
             param.grad = None
         target = data[0].cuda()
+        target_reflect = retinex_decompose()
         input_ = data[1].cuda()
-        restored = model_restored(input_)
+        restored, restored_reflect = model_restored(input_)
 
         # Compute loss
-        loss = Charloss(restored, target)
+        loss_ori = Charloss(restored, target)
+        loss_reflect = Charloss(restored_reflect, target_reflect)
+        loss = loss_ori + loss_reflect
 
         # Back propagation
         loss.backward()

@@ -335,10 +335,38 @@ class LLFormer(nn.Module):
         self.output = nn.Conv2d(int(dim), out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
         self.skip = skip
 
+        # 增加一条反射率子网络分支（5层神经网络）
+        # 反射率图像作为物体的固有属性，对低光照和正常光照图像都一样
+        self.encoder_1 = nn.Sequential(*[
+            TransformerBlock(dim=dim, num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias,
+                             LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+        self.encoder_2 = nn.Sequential(*[
+            TransformerBlock(dim=int(dim), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias,
+                             LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+        self.encoder_3 = nn.Sequential(*[
+            TransformerBlock(dim=int(dim), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias,
+                             LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+        self.encoder_4 = nn.Sequential(*[
+            TransformerBlock(dim=int(dim), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias,
+                             LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+        self.encoder_5 = nn.Sequential(*[
+            TransformerBlock(dim=int(dim), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias,
+                             LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+
 
     def forward(self, inp_img):
 
         inp_enc_encoder1 = self.patch_embed(inp_img)
+
+        # 反射率子网络分支
+        out_enc_encoder_sub1 = self.encoder_1(inp_enc_encoder1)
+        out_enc_encoder_sub2 = self.encoder_2(out_enc_encoder_sub1)
+        out_enc_encoder_sub3 = self.encoder_3(out_enc_encoder_sub2)
+        out_enc_encoder_sub4 = self.encoder_3(out_enc_encoder_sub3)
+        out_enc_encoder_sub5 = self.encoder_3(out_enc_encoder_sub4)
+        reflect_out = self.out(out_enc_encoder_sub5)
+
+        # 原低光照图像增强分支
         out_enc_encoder1 = self.encoder_1(inp_enc_encoder1)
         out_enc_encoder2 = self.encoder_2(out_enc_encoder1)
         out_enc_encoder3 = self.encoder_3(out_enc_encoder2)
@@ -414,5 +442,5 @@ class LLFormer(nn.Module):
         else:
             out = self.output(out)
 
-        return out
+        return out, reflect_out
 

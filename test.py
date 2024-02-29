@@ -16,7 +16,7 @@ import cv2
 import argparse
 from model.LLFormer import LLFormer
 parser = argparse.ArgumentParser(description='Demo Low-light Image Enhancement')
-parser.add_argument('--input_dir', default='./datasets/LOL/test/low/', type=str, help='Input images')
+parser.add_argument('--input_dir', default='./datasets/LOLdataset/eval15/low/', type=str, help='Input images')
 parser.add_argument('--result_dir', default='./results/LOL/', type=str, help='Directory for results')
 parser.add_argument('--weights',
                     default='./checkpoints/LOL/models/model_bestPSNR.pth', type=str,
