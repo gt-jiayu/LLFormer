@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 import time
 import numpy as np
 import random
+import cv2
 from transform.data_RGB import get_training_data,get_validation_data2
 from warmup_scheduler import GradualWarmupScheduler
 from tqdm import tqdm
@@ -132,6 +133,13 @@ log_dir = os.path.join(Train['SAVE_DIR'], mode, 'log')
 utils.mkdir(log_dir)
 writer = SummaryWriter(log_dir=log_dir, filename_suffix=f'_{mode}')
 
+
+def retinex_decompose(img, size=3):
+    L_blur = cv2.GaussianBlur(img, (size, size), 3)
+    log_R = np.log(img + 0.001) - np.log(L_blur + 0.001)
+
+    return log_R
+
 for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
     epoch_start_time = time.time()
     epoch_loss = 0
@@ -143,8 +151,8 @@ for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
         for param in model_restored.parameters():
             param.grad = None
         target = data[0].cuda()
-        target_reflect = retinex_decompose()
         input_ = data[1].cuda()
+        target_reflect = retinex_decompose(input_)
         restored, restored_reflect = model_restored(input_)
 
         # Compute loss
