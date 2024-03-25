@@ -22,7 +22,7 @@ import utils.losses
 from model.LLFormer import LLFormer
 import argparse
 parser = argparse.ArgumentParser(description='Hyper-parameters for LLFormer')
-parser.add_argument('-yml_path', default="./training.yaml", type=str)
+parser.add_argument('-yml_path', default="./configs/LOL/train/training_LOL.yaml", type=str)
 args = parser.parse_args()
 
 
@@ -45,6 +45,7 @@ OPT = opt['OPTIM']
 
 ## Build Model
 print('==> Build the model')
+# os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 model_restored = LLFormer(inp_channels=3,out_channels=3,dim = 16,num_blocks = [2,4,8,16],num_refinement_blocks = 2,heads = [1,2,4,8],ffn_expansion_factor = 2.66,bias = False,LayerNorm_type = 'WithBias',attention=True,skip = False)
 p_number = network_parameters(model_restored)
 model_restored.cuda()
@@ -62,8 +63,14 @@ gpus = ','.join([str(i) for i in opt['GPU']])
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = gpus
 device_ids = [i for i in range(torch.cuda.device_count())]
+
+device_ids = [5,6]
+# 检查这些设备是否可用
+devices = [torch.device(f"cuda:{i}") for i in device_ids if torch.cuda.is_available() and torch.cuda.device_count() > i]
 if torch.cuda.device_count() > 1:
     print("\n\nLet's use", torch.cuda.device_count(), "GPUs!\n\n")
+# 将模型移到设备上（这实际上会将模型移到第一个device_ids中的设备上，但DataParallel会在所有设备上使用它）
+model_restored.to(devices[0])
 if len(device_ids) > 1:
     model_restored = nn.DataParallel(model_restored, device_ids=device_ids)
 
@@ -142,8 +149,8 @@ for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
         # Forward propagation
         for param in model_restored.parameters():
             param.grad = None
-        target = data[0].cuda()
-        input_ = data[1].cuda()
+        target = data[0].cuda().to(devices[0])
+        input_ = data[1].cuda().to(devices[0])
         restored = model_restored(input_)
 
         # Compute loss
@@ -160,8 +167,8 @@ for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
         psnr_val_rgb = []
         ssim_val_rgb = []
         for ii, data_val in enumerate(val_loader, 0):
-            target = data_val[0].cuda()
-            input_ = data_val[1].cuda()
+            target = data_val[0].cuda().to(devices[0])
+            input_ = data_val[1].cuda().to(devices[0])
             h, w = target.shape[2], target.shape[3]
             with torch.no_grad():
                 restored = model_restored(input_)
