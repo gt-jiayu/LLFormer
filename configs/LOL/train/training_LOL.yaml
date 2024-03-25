@@ -20,6 +20,6 @@ TRAINING:
   RESUME: False
   TRAIN_PS: 128
   VAL_PS: 128
-  TRAIN_DIR: './datasets/LOL/train'       # path to training data
-  VAL_DIR: './datasets/LOL/test' # path to validation data
+  TRAIN_DIR: './datasets/LOLdataset/train'       # path to training data
+  VAL_DIR: './datasets/LOLdataset/test' # path to validation data
   SAVE_DIR: './checkpoints'           # path to save models and images

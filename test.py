@@ -17,9 +17,9 @@ import argparse
 from model.LLFormer import LLFormer
 parser = argparse.ArgumentParser(description='Demo Low-light Image Enhancement')
 parser.add_argument('--input_dir', default='./datasets/LOLdataset/eval15/low/', type=str, help='Input images')
-parser.add_argument('--result_dir', default='./results/LOL/', type=str, help='Directory for results')
+parser.add_argument('--result_dir', default='./results/LLFormer_LOL/', type=str, help='Directory for results')
 parser.add_argument('--weights',
-                    default='./checkpoints/LOL/models/model_bestPSNR.pth', type=str,
+                    default='./checkpoints/LLFormer_LOL/models/model_bestPSNR.pth', type=str,
                     help='Path to weights')
 
 args = parser.parse_args()
@@ -55,9 +55,10 @@ if len(files) == 0:
     raise Exception(f"No files found at {inp_dir}")
 
 # Load corresponding models architecture and weights
+device = torch.device('cuda:7')
 
 model = LLFormer(inp_channels=3,out_channels=3,dim = 16,num_blocks = [2,4,8,16],num_refinement_blocks = 2,heads = [1,2,4,8],ffn_expansion_factor = 2.66,bias = False,LayerNorm_type = 'WithBias',attention=True,skip = False)
-model.cuda()
+model.cuda().to(device)
 
 load_checkpoint(model, args.weights)
 model.eval()
@@ -69,7 +70,7 @@ index = 0
 psnr_val_rgb = []
 for file_ in files:
     img = Image.open(file_).convert('RGB')
-    input_ = TF.to_tensor(img).unsqueeze(0).cuda()
+    input_ = TF.to_tensor(img).unsqueeze(0).cuda().to(device)
 
     # Pad the input if not_multiple_of 16
     h, w = input_.shape[2], input_.shape[3]
