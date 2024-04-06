@@ -352,6 +352,7 @@ class LLFormer(nn.Module):
         self.encoder_5 = nn.Sequential(*[
             TransformerBlock(dim=int(dim), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias,
                              LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+        self.output_reflect = nn.Conv2d(int(dim), out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
 
 
     def forward(self, inp_img):
@@ -364,7 +365,7 @@ class LLFormer(nn.Module):
         out_enc_encoder_sub3 = self.encoder_3(out_enc_encoder_sub2)
         out_enc_encoder_sub4 = self.encoder_3(out_enc_encoder_sub3)
         out_enc_encoder_sub5 = self.encoder_3(out_enc_encoder_sub4)
-        reflect_out = self.out(out_enc_encoder_sub5)
+        reflect_out = self.output(out_enc_encoder_sub5)
 
         # 原低光照图像增强分支
         out_enc_encoder1 = self.encoder_1(inp_enc_encoder1)

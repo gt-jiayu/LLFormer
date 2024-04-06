@@ -1,4 +1,5 @@
 import os
+import cv2
 from torch.utils.data import Dataset
 import torch
 from PIL import Image
@@ -10,6 +11,15 @@ from utils.image_utils import load_img
 #import torch.nn.functional as F
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['jpeg', 'JPEG', 'jpg', 'png', 'JPG', 'PNG', 'gif'])
+
+
+def retinex_decompose(img, size=3):
+    img = np.array(img)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    L_blur = cv2.GaussianBlur(img, (size, size), 3)
+    log_R = np.log(img + 0.001) - np.log(L_blur + 0.001)
+
+    return log_R
 
 
 class DataLoaderTrain(Dataset):
@@ -39,6 +49,7 @@ class DataLoaderTrain(Dataset):
 
         inp_img = Image.open(inp_path).convert('RGB')
         tar_img = Image.open(tar_path).convert('RGB')
+        reflect_img = retinex_decompose(Image.open(inp_path).convert('RGB'))
 
         w, h = tar_img.size
         padw = ps - w if w < ps else 0
@@ -48,9 +59,11 @@ class DataLoaderTrain(Dataset):
         if padw != 0 or padh != 0:
             inp_img = TF.pad(inp_img, (0, 0, padw, padh), padding_mode='reflect')
             tar_img = TF.pad(tar_img, (0, 0, padw, padh), padding_mode='reflect')
+            reflect_img = TF.pad(reflect_img, (0, 0, padw, padh), padding_mode='reflect')
 
         inp_img = TF.to_tensor(inp_img)
         tar_img = TF.to_tensor(tar_img)
+        reflect_img = TF.to_tensor(reflect_img)
 
         hh, ww = tar_img.shape[1], tar_img.shape[2]
 
@@ -61,33 +74,41 @@ class DataLoaderTrain(Dataset):
         # Crop patch
         inp_img = inp_img[:, rr:rr + ps, cc:cc + ps]
         tar_img = tar_img[:, rr:rr + ps, cc:cc + ps]
+        reflect_img = reflect_img[:, rr:rr + ps, cc:cc + ps]
 
         # Data Augmentations
         if aug == 1:
             inp_img = inp_img.flip(1)
             tar_img = tar_img.flip(1)
+            reflect_img = reflect_img.flip(1)
         elif aug == 2:
             inp_img = inp_img.flip(2)
             tar_img = tar_img.flip(2)
+            reflect_img = reflect_img.flip(2)
         elif aug == 3:
             inp_img = torch.rot90(inp_img, dims=(1, 2))
             tar_img = torch.rot90(tar_img, dims=(1, 2))
+            reflect_img = torch.rot90(reflect_img, dims=(1, 2))
         elif aug == 4:
             inp_img = torch.rot90(inp_img, dims=(1, 2), k=2)
             tar_img = torch.rot90(tar_img, dims=(1, 2), k=2)
+            reflect_img = torch.rot90(reflect_img, dims=(1, 2), k=2)
         elif aug == 5:
             inp_img = torch.rot90(inp_img, dims=(1, 2), k=3)
             tar_img = torch.rot90(tar_img, dims=(1, 2), k=3)
+            reflect_img = torch.rot90(reflect_img, dims=(1, 2), k=3)
         elif aug == 6:
             inp_img = torch.rot90(inp_img.flip(1), dims=(1, 2))
             tar_img = torch.rot90(tar_img.flip(1), dims=(1, 2))
+            reflect_img = torch.rot90(reflect_img.flip(1), dims=(1, 2))
         elif aug == 7:
             inp_img = torch.rot90(inp_img.flip(2), dims=(1, 2))
             tar_img = torch.rot90(tar_img.flip(2), dims=(1, 2))
+            reflect_img = torch.rot90(reflect_img.flip(2), dims=(1, 2))
 
         filename = os.path.splitext(os.path.split(tar_path)[-1])[0]
 
-        return tar_img, inp_img, filename
+        return tar_img, inp_img, reflect_img, filename
 
 
 class DataLoaderVal(Dataset):

@@ -54,7 +54,7 @@ model_restored.cuda()
 ## Training model path direction
 mode = opt['MODEL']['MODE']
 
-model_dir = os.path.join(Train['SAVE_DIR'], mode, 'checkpoints/LOL/models')
+model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models')
 utils.mkdir(model_dir)
 train_dir = Train['TRAIN_DIR']
 val_dir = Train['VAL_DIR']
@@ -65,7 +65,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = gpus
 device_ids = [i for i in range(torch.cuda.device_count())]
 
-device_ids = [5,6]
+device_ids = [6, 7]
 # 检查这些设备是否可用
 devices = [torch.device(f"cuda:{i}") for i in device_ids if torch.cuda.is_available() and torch.cuda.device_count() > i]
 if torch.cuda.device_count() > 1:
@@ -140,13 +140,6 @@ log_dir = os.path.join(Train['SAVE_DIR'], mode, 'log')
 utils.mkdir(log_dir)
 writer = SummaryWriter(log_dir=log_dir, filename_suffix=f'_{mode}')
 
-
-def retinex_decompose(img, size=3):
-    L_blur = cv2.GaussianBlur(img, (size, size), 3)
-    log_R = np.log(img + 0.001) - np.log(L_blur + 0.001)
-
-    return log_R
-
 for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
     epoch_start_time = time.time()
     epoch_loss = 0
@@ -159,7 +152,7 @@ for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
             param.grad = None
         target = data[0].cuda().to(devices[0])
         input_ = data[1].cuda().to(devices[0])
-        target_reflect = retinex_decompose(input_)
+        target_reflect = data[2].cuda().to(devices[0])
         restored, restored_reflect = model_restored(input_)
 
         # Compute loss
@@ -182,7 +175,7 @@ for epoch in range(start_epoch, OPT['EPOCHS'] + 1):
             input_ = data_val[1].cuda().to(devices[0])
             h, w = target.shape[2], target.shape[3]
             with torch.no_grad():
-                restored = model_restored(input_)
+                restored, restored_reflect = model_restored(input_)
                 restored = restored[:, :, :h, :w]
 
             for res, tar in zip(restored, target):

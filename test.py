@@ -30,7 +30,7 @@ def save_img(filepath, img):
 
 
 def load_checkpoint(model, weights):
-    checkpoint = torch.load(weights)
+    checkpoint = torch.load(weights, map_location=device)
     try:
         model.load_state_dict(checkpoint["state_dict"])
     except:
@@ -55,7 +55,8 @@ if len(files) == 0:
     raise Exception(f"No files found at {inp_dir}")
 
 # Load corresponding models architecture and weights
-device = torch.device('cuda:7')
+os.environ["CUDA_VISIBLE_DEVICES"] = '5,6,7'
+device = torch.device('cuda:0')
 
 model = LLFormer(inp_channels=3,out_channels=3,dim = 16,num_blocks = [2,4,8,16],num_refinement_blocks = 2,heads = [1,2,4,8],ffn_expansion_factor = 2.66,bias = False,LayerNorm_type = 'WithBias',attention=True,skip = False)
 model.cuda().to(device)
@@ -79,7 +80,7 @@ for file_ in files:
     padw = W - w if w % mul != 0 else 0
     input_ = F.pad(input_, (0, padw, 0, padh), 'reflect')
     with torch.no_grad():
-        restored = model(input_)
+        restored, restored_reflect = model(input_)
 
     restored = torch.clamp(restored, 0, 1)
     restored = restored[:, :, :h, :w]
