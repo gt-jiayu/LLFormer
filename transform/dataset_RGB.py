@@ -13,13 +13,17 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['jpeg', 'JPEG', 'jpg', 'png', 'JPG', 'PNG', 'gif'])
 
 
-def retinex_decompose(img, size=3):
+def retinex_decompose(img):
     img = np.array(img)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    L_blur = cv2.GaussianBlur(img, (size, size), 3)
+    # 高斯模糊，高斯核设置为0，高斯核的标准差设置为80、自动计算核的大小
+    L_blur = cv2.GaussianBlur(img, (0, 0), 80)
+    # Retinex公式：log_R = log_S - log(Gauss(S))；加上0.001，防止log计算时有0值出错
     log_R = np.log(img + 0.001) - np.log(L_blur + 0.001)
+    # exp运算得到R
+    R = np.exp(log_R)
 
-    return log_R
+    return R
 
 
 class DataLoaderTrain(Dataset):
