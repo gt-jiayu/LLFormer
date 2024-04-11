@@ -54,7 +54,7 @@ model_restored.cuda()
 ## Training model path direction
 mode = opt['MODEL']['MODE']
 
-model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models_exp')
+model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models')
 utils.mkdir(model_dir)
 train_dir = Train['TRAIN_DIR']
 val_dir = Train['VAL_DIR']
