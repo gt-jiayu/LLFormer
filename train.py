@@ -54,6 +54,7 @@ model_restored.cuda()
 mode = opt['MODEL']['MODE']
 
 model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models_recurrence')
+print("model_dir:", model_dir)
 utils.mkdir(model_dir)
 train_dir = Train['TRAIN_DIR']
 val_dir = Train['VAL_DIR']
