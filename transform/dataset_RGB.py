@@ -23,7 +23,7 @@ def retinex_decompose(img):
     # exp运算得到R
     R = np.exp(log_R)
 
-    return R
+    return log_R
 
 
 class DataLoaderTrain(Dataset):

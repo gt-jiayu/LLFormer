@@ -54,7 +54,7 @@ model_restored.cuda()
 ## Training model path direction
 mode = opt['MODEL']['MODE']
 
-model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models_reflect')
+model_dir = os.path.join(Train['SAVE_DIR'], mode, 'models_reflect_log')
 print("model_dir:", model_dir)
 utils.mkdir(model_dir)
 train_dir = Train['TRAIN_DIR']
@@ -66,7 +66,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = gpus
 device_ids = [i for i in range(torch.cuda.device_count())]
 
-device_ids = [1]
+device_ids = [2]
 # 检查这些设备是否可用
 devices = [torch.device(f"cuda:{i}") for i in device_ids if torch.cuda.is_available() and torch.cuda.device_count() > i]
 if torch.cuda.device_count() > 1:
