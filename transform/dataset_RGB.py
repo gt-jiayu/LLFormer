@@ -1,4 +1,6 @@
 import os
+import time
+
 import cv2
 from torch.utils.data import Dataset
 import torch
@@ -20,8 +22,8 @@ def retinex_decompose(img):
     L_blur = cv2.GaussianBlur(img, (0, 0), 80)
     # Retinex公式：log_R = log_S - log(Gauss(S))；加上0.001，防止log计算时有0值出错
     log_R = np.log(img + 0.001) - np.log(L_blur + 0.001)
-    # exp运算得到R
-    R = np.exp(log_R)
+    # 线性量化：一般都不会用exp函数，而是做线性缩放
+    R = cv2.normalize(log_R, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
     return R
 
@@ -32,9 +34,11 @@ class DataLoaderTrain(Dataset):
 
         inp_files = sorted(os.listdir(os.path.join(rgb_dir, 'low')))
         tar_files = sorted(os.listdir(os.path.join(rgb_dir, 'high')))
+        reflect_files = sorted(os.listdir(os.path.join(rgb_dir, 'reflect')))
 
         self.inp_filenames = [os.path.join(rgb_dir, 'low', x) for x in inp_files if is_image_file(x)]
         self.tar_filenames = [os.path.join(rgb_dir, 'high', x) for x in tar_files if is_image_file(x)]
+        self.reflect_filenames = [os.path.join(rgb_dir, 'reflect', x) for x in reflect_files if is_image_file(x)]
 
         self.img_options = img_options
         self.sizex = len(self.tar_filenames)  # get the size of target
@@ -50,10 +54,12 @@ class DataLoaderTrain(Dataset):
 
         inp_path = self.inp_filenames[index_]
         tar_path = self.tar_filenames[index_]
+        reflect_path = self.reflect_filenames[index_]
 
         inp_img = Image.open(inp_path).convert('RGB')
         tar_img = Image.open(tar_path).convert('RGB')
-        reflect_img = retinex_decompose(Image.open(inp_path).convert('RGB'))
+        reflect_img = Image.open(reflect_path).convert('RGB')
+
 
         w, h = tar_img.size
         padw = ps - w if w < ps else 0

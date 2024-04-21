@@ -1,6 +1,8 @@
+import os
 import cv2
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 
 
 class Retinex:
@@ -13,8 +15,8 @@ class Retinex:
         L_blur = cv2.GaussianBlur(res, (0, 0), 80)
         # Retinex公式：log_R = log_S - log(Gauss(S))；加上0.001，防止log计算时有0值出错
         log_R = np.log(res + 0.001) - np.log(L_blur + 0.001)
-        # exp运算得到R
-        R = np.exp(log_R)
+        # 线性量化：一般都不会用exp函数，而是做线性缩放
+        R = cv2.normalize(log_R, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
         return R
 
@@ -38,12 +40,21 @@ class Retinex:
         return dst
 
 def main():
-    print('here')
-    rex = Retinex('datasets/LOLdataset/eval15/high/111.png')
-    cv2.imshow('src', rex.img)
-    cv2.waitKey(1000)
-    cv2.imshow('result', rex.ssr())
-    cv2.waitKey(0)
+    image_path = 'datasets/LOLdataset/train/low/'
+    for image_file in tqdm(os.listdir(image_path)):
+        if os.path.splitext(image_file)[1].lower() != '.png':
+            continue
+
+        image_file_path = os.path.join(image_path, image_file)
+        retinex_object = Retinex(image_file_path)
+        reflect_image = retinex_object.ssr()
+        target_path = os.path.join('datasets/LOLdataset/train/reflect/', image_file)
+        cv2.imwrite(target_path, reflect_image)
+    # rex = Retinex('datasets/LOLdataset/eval15/low/111.png')
+    # cv2.imshow('src', rex.img)
+    # cv2.waitKey(1000)
+    # cv2.imshow('result', rex.ssr())
+    # cv2.waitKey(0)
 
 if __name__ == "__main__":
     main()
