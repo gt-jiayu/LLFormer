@@ -65,7 +65,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = gpus
 device_ids = [i for i in range(torch.cuda.device_count())]
 
-device_ids = [0]
+device_ids = [1]
 # 检查这些设备是否可用
 devices = [torch.device(f"cuda:{i}") for i in device_ids if torch.cuda.is_available() and torch.cuda.device_count() > i]
 if torch.cuda.device_count() > 1:
@@ -109,9 +109,9 @@ Charloss = nn.SmoothL1Loss()
 print('==> Loading datasets')
 train_dataset = get_training_data(train_dir, {'patch_size': Train['TRAIN_PS']})
 train_loader = DataLoader(dataset=train_dataset, batch_size=OPT['BATCH'],
-                          shuffle=True, num_workers=8, drop_last=False)
+                          shuffle=True, num_workers=4, drop_last=False)
 val_dataset = get_validation_data2(val_dir, {'patch_size': Train['VAL_PS']})
-val_loader = DataLoader(dataset=val_dataset, batch_size=OPT['BATCH'], shuffle=False, num_workers=8,
+val_loader = DataLoader(dataset=val_dataset, batch_size=2, shuffle=False, num_workers=4,
                         drop_last=False)
 
 # Show the training configuration
