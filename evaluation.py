@@ -15,6 +15,7 @@ import argparse
 from natsort import natsort
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 import lpips
 
 class Measure():
@@ -40,6 +41,10 @@ class Measure():
     def psnr(self, imgA, imgB):
         psnr_val = psnr(imgA, imgB)
         return psnr_val
+
+    def mae(self, imgA, imgB):
+        mae_val = np.mean(np.abs(imgA - imgB))
+        return mae_val
 
 
 def t(img):
