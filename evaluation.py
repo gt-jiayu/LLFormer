@@ -15,7 +15,6 @@ import argparse
 from natsort import natsort
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 import lpips
 
 class Measure():
